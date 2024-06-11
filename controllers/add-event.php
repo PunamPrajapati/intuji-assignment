@@ -4,7 +4,7 @@ require_once '../config/connection.php';
 $valErr = ''; 
 $status = 'danger';
 $statusMsg = 'Event Added Successfully';
-
+$googleOauthURL = 'https://accounts.google.com/o/oauth2/auth?scope=' . urlencode(GOOGLE_OAUTH_SCOPE) . '&redirect_uri=' . REDIRECT_URI . '&response_type=code&client_id=' . GOOGLE_CLIENT_ID . '&access_type=online'; 
 if(isset($_POST['submit'])){ 
     $_SESSION['postData'] = $_POST; 
     $title = !empty($_POST['title'])?trim($_POST['title']):''; 
@@ -29,7 +29,7 @@ if(isset($_POST['submit'])){
     } 
     if(!empty($start_time) && !empty($end_time))
     {
-        if($start_time < $end_time)
+        if($start_time > $end_time)
         {
             $valErr .= 'The end time must be after the start time. Please select a valid end time.<br/>'; 
         }
@@ -57,8 +57,8 @@ if(isset($_POST['submit'])){
             // Store event ID in session 
             $_SESSION['last_event_id'] = $event_id; 
             $status = 'success';
-            // header("Location: $googleOauthURL"); 
-            // exit(); 
+            header("Location: $googleOauthURL"); 
+            exit(); 
         }else{ 
             $statusMsg = 'Something went wrong, please try again after some time.'; 
         } 

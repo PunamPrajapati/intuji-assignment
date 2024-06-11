@@ -10,6 +10,12 @@
 <body>
     <?php
         require_once './config/connection.php'; 
+        $postData = ''; 
+        if(!empty($_SESSION['postData'])){ 
+            $postData = $_SESSION['postData']; 
+            unset($_SESSION['postData']); 
+        } 
+
         $status = $statusMsg = ''; 
         if(!empty($_SESSION['status_response'])){ 
             $status_response = $_SESSION['status_response']; 
@@ -23,20 +29,9 @@
 
         if(isset($_POST['submit'])) {
             $id = $_POST['id'];
-            $sql = "DELETE FROM `events` WHERE `id` = $id" ;
-            $stmt = $db->prepare($sql);  
-            $delete = $stmt->execute(); 
-            if($delete)
-            {
-                $statusMsg = 'Successfully deleted!'; 
-                $status = 'success';
-            }else{
-                $statusMsg = 'Failed to delete!'; 
-                $status = 'danger';
-            }
-            $_SESSION['status_response'] = array('status' => $status, 'status_msg' => $statusMsg);
-            header("Location:" .BASEPATH."index.php"); 
-            exit(); 
+            $_SESSION['delete_event_id'] = $id;
+            header("Location:".BASEPATH."controllers/google_calendar_event_delete_sync.php");
+            exit();
         }
     ?>
     <div class="container mt-5">
@@ -46,7 +41,7 @@
                 <span aria-hidden="true">&times;</span>
             </button>
             </div>
-        <?php } ?>
+        <?php } unset($_SESSION['status_response']);?>
         <div class="row">
             <div class="col-lg-4">
                 <div class="card">
@@ -55,27 +50,27 @@
                         <form action="controllers/add-event.php" method="POST">
                             <div class="form-group">
                                 <label for="title">Event Title:</label>
-                                <input type="text" class="form-control" id="title" name="title" required>
+                                <input type="text" class="form-control" id="title" name="title" required value="<?= !empty($postData['title'])?$postData['title']:''; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="description">Description:</label>
-                                <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                                <textarea class="form-control" id="description" name="description" rows="4" required><?= !empty($postData['description'])?$postData['description']:''; ?></textarea>
                             </div>
                             <div class="form-group">
                                 <label for="location">Location:</label>
-                                <input type="text" class="form-control" id="location" name="location" required>
+                                <input type="text" class="form-control" id="location" name="location" required value="<?= !empty($postData['location'])?$postData['location']:''; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="date">Date:</label>
-                                <input type="date" class="form-control" id="date" name="date" required>
+                                <input type="date" class="form-control" id="date" name="date" required value="<?= !empty($postData['date'])?$postData['date']:''; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="start-time">Start Time:</label>
-                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required value="<?= !empty($postData['start_time'])?$postData['start_time']:''; ?>">
                             </div>
                             <div class="form-group">
                                 <label for="end-time">End Time:</label>
-                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required value="<?= !empty($postData['end_time'])?$postData['end_time']:''; ?>">
                             </div>
                             <button type="submit" class="btn btn-primary" name="submit">Submit</button>
                         </form>
@@ -85,7 +80,14 @@
             <div class="col-lg-8">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h2 class="card-title mb-0">Events</h2>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h2 class="card-title mb-0">Events</h2>
+                            <?php if(isset($_SESSION['synced']) && $_SESSION['synced'] == 'true'){ ?>
+                                <form method="POST" action="controllers/google_calendar_unsync.php">
+                                    <button class="btn btn-danger btn-sm" type="submit" name="submit">Disconnect</button>
+                                </form>
+                            <?php } ?>
+                        </div>
                         <table class="table table-striped mt-3">
                             <thead>
                                 <tr>
